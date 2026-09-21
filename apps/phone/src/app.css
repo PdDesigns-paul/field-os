@@ -1,0 +1,269 @@
+:root {
+  --paper: #efece3;
+  --paper-2: #e7e2d4;
+  --paper-3: #f6f2e8;
+  --ink: #1a1814;
+  --muted: #5c564c;
+  --rule: #d2ccbe;
+  --field: #24382e;
+  --field-fg: #efece3;
+  --steel: #3f4e57;
+  --danger: #6b2e24;
+  --warn-bg: #efe4d2;
+  --bar: 64px;
+  --pad: max(16px, env(safe-area-inset-left));
+  --radius: 14px;
+  --font-display: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  --font-body: "Source Sans 3", "Segoe UI", ui-sans-serif, system-ui, sans-serif;
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 17px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  min-height: 100dvh;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+}
+
+button:not(:disabled),
+a.go {
+  cursor: pointer;
+}
+
+#app {
+  min-height: 100dvh;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+  font-weight: 500;
+  letter-spacing: -0.03em;
+  margin: 0;
+}
+
+p {
+  margin: 0;
+}
+
+a {
+  color: var(--steel);
+}
+
+.place {
+  min-height: 100dvh;
+  padding: calc(12px + env(safe-area-inset-top)) var(--pad)
+    calc(var(--bar) + 108px + env(safe-area-inset-bottom));
+}
+
+.place-body {
+  width: min(42rem, 100%);
+  margin: 0 auto;
+}
+
+.kicker {
+  color: var(--muted);
+  font-size: 0.82rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin: 0 0 6px;
+}
+
+.lede {
+  color: var(--muted);
+  margin: 8px 0 20px;
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.do {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  min-width: 48px;
+  padding: 12px 20px;
+  border-radius: 999px;
+  background: var(--field);
+  color: var(--field-fg);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.do:disabled {
+  opacity: 0.45;
+}
+
+.do.ghost {
+  background: transparent;
+  color: var(--ink);
+  border: 1px solid var(--rule);
+}
+
+.go {
+  display: inline-flex;
+  align-items: center;
+  min-height: 48px;
+  padding: 8px 2px;
+  font-weight: 600;
+  text-decoration: none;
+  color: var(--ink);
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: var(--paper-3);
+  border: 1px solid var(--rule);
+  font-weight: 600;
+}
+
+.chip[aria-pressed="true"] {
+  background: var(--field);
+  color: var(--field-fg);
+  border-color: var(--field);
+}
+
+.talk {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 56px;
+  min-width: 56px;
+  padding: 0 18px;
+  border-radius: 999px;
+  background: var(--steel);
+  color: #f3efe6;
+  font-weight: 600;
+}
+
+.caption {
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.panel {
+  background: color-mix(in oklab, var(--paper) 55%, white);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  padding: 16px 16px 18px;
+}
+
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.tile {
+  min-height: 88px;
+  border-radius: var(--radius);
+  border: 1px solid var(--rule);
+  background: var(--paper-3);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 12px 14px;
+  text-align: left;
+}
+
+.tile strong {
+  font-family: var(--font-display);
+  font-size: 1.8rem;
+  line-height: 1;
+}
+
+.tile span {
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+.banner {
+  background: var(--warn-bg);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  color: var(--ink);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.field label {
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.field input,
+.field textarea {
+  font: inherit;
+  color: inherit;
+  background: var(--paper-3);
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  min-height: 48px;
+  padding: 10px 12px;
+  width: 100%;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.list-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
