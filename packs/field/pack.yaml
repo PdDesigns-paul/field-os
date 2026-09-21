@@ -1,0 +1,16 @@
+id: field
+productName: Field
+talkName: Talk
+pwa:
+  name: Field
+  shortName: Field
+modules:
+  storms: false
+  claim: false
+  internachi: false
+  packets: false
+labor:
+  units:
+    - { id: doors, label: Doors }
+    - { id: talks, label: Talks }
+    - { id: sets, label: Sets }

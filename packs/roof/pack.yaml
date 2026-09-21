@@ -1,0 +1,16 @@
+id: roof
+productName: Roof canvass
+talkName: Talk
+pwa:
+  name: Roof canvass
+  shortName: Roof
+modules:
+  storms: true
+  claim: true
+  internachi: false
+  packets: false
+labor:
+  units:
+    - { id: doors, label: Doors }
+    - { id: looks, label: Looks }
+    - { id: sets, label: Sets }

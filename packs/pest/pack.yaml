@@ -1,0 +1,16 @@
+id: pest
+productName: Pest route
+talkName: Talk
+pwa:
+  name: Pest route
+  shortName: Pest
+modules:
+  storms: false
+  claim: false
+  internachi: false
+  packets: false
+labor:
+  units:
+    - { id: stops, label: Stops }
+    - { id: inspects, label: Inspects }
+    - { id: starts, label: Starts }

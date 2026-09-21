@@ -1,0 +1,12 @@
+{
+  "name": "@field-os/kernel",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --experimental-strip-types --test src/kernel.test.ts"
+  },
+  "dependencies": {
+    "sql.js": "^1.14.2"
+  }
+}

@@ -1,0 +1,7 @@
+id: leaky
+productName: Leaky
+talkName: Talk
+# This fixture must fail compile: knock / On the roof / i35 / hail / adjuster.
+labor:
+  units:
+    - { id: roof, label: On the roof }

@@ -1,0 +1,16 @@
+id: solar
+productName: Solar route
+talkName: Talk
+pwa:
+  name: Solar route
+  shortName: Solar
+modules:
+  storms: false
+  claim: false
+  internachi: false
+  packets: false
+labor:
+  units:
+    - { id: pitch, label: Pitch }
+    - { id: site, label: Site }
+    - { id: route, label: Route }
