@@ -1,0 +1,23 @@
+name: kernel
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  kernel:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - name: Kernel tests
+        run: |
+          if [ -f packages/kernel/package.json ]; then
+            npm ci
+            npm test --workspace packages/kernel
+          else
+            echo "Kernel not scaffolded yet. CI is a no-op until sequence 1."
+          fi

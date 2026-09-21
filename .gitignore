@@ -1,0 +1,16 @@
+node_modules/
+dist/
+.svelte-kit/
+.vercel/
+.output/
+.env
+.env.*
+!.env.example
+*.db
+*.sqlite
+*.sqlite-journal
+.DS_Store
+coverage/
+.turbo/
+*.log
+.os_pack_cache/

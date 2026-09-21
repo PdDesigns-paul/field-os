@@ -1,0 +1,11 @@
+# Host → pack. Unknown host resolves to field. Never silent roof.
+# grok.me is not a pack host.
+
+default: field
+
+hosts:
+  # fieldos.vercel.app: field
+  # field.example.com: field
+  # pest.example.com: pest
+  # solar.example.com: solar
+  # roof.example.com: roof

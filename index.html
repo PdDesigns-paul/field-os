@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Field OS — the book for the porch</title>
+  <meta name="description" content="White-label door-to-door coach and journal. Kernel in TypeScript, phone in Svelte 5, book in SQLite. Default pack is generic D2D." />
+  <meta name="theme-color" content="#efece3" />
+  <link rel="icon" type="image/svg+xml" href="/public/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Source+Sans+3:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --paper: #efece3;
+      --paper-2: #e7e2d4;
+      --ink: #1a1814;
+      --muted: #5c564c;
+      --rule: #d2ccbe;
+      --steel: #3f4e57;
+      --field: #24382e;
+      --field-fg: #efece3;
+      --danger: #6b2e24;
+      --radius: 14px;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; background: var(--paper); color: var(--ink); }
+    body {
+      font-family: "Source Sans 3", system-ui, sans-serif;
+      font-size: 1.0625rem;
+      line-height: 1.55;
+      min-height: 100dvh;
+    }
+    a { color: var(--steel); }
+    .wrap { width: min(1080px, calc(100% - 32px)); margin: 0 auto; }
+    header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 20px 0 8px; border-bottom: 1px solid var(--rule);
+    }
+    .brand { display: flex; align-items: center; gap: 10px; font-weight: 600; letter-spacing: -0.02em; }
+    .brand img { width: 28px; height: 28px; }
+    nav { display: flex; gap: 18px; font-size: 0.92rem; }
+    nav a { color: var(--muted); text-decoration: none; }
+    nav a:hover { color: var(--ink); }
+    h1, h2, h3 { font-family: Fraunces, Georgia, serif; font-weight: 500; letter-spacing: -0.03em; }
+    h1 { font-size: clamp(2.4rem, 6vw, 4.4rem); line-height: 1.05; margin: 48px 0 16px; max-width: 14ch; }
+    h2 { font-size: clamp(1.5rem, 3vw, 2rem); margin: 0 0 12px; }
+    h3 { font-size: 1.15rem; margin: 0 0 8px; }
+    .lede { font-size: 1.2rem; max-width: 42ch; color: var(--muted); margin: 0 0 28px; }
+    .row { display: flex; flex-wrap: wrap; gap: 12px; margin: 28px 0 56px; }
+    .do {
+      display: inline-flex; align-items: center; justify-content: center;
+      background: var(--field); color: var(--field-fg); text-decoration: none;
+      padding: 14px 22px; border-radius: 999px; font-weight: 600; min-height: 48px;
+    }
+    .go {
+      display: inline-flex; align-items: center; color: var(--ink); text-decoration: none;
+      padding: 14px 8px; font-weight: 600; min-height: 48px;
+    }
+    .places { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 36px 0 64px; }
+    .place {
+      border: 1px solid var(--rule); border-radius: var(--radius); padding: 16px 16px 18px;
+      background: color-mix(in oklab, var(--paper) 70%, white);
+    }
+    .place strong { display: block; font-family: Fraunces, Georgia, serif; font-size: 1.2rem; margin-bottom: 4px; }
+    .place span { color: var(--muted); font-size: 0.92rem; }
+    .split { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; margin: 0 0 64px; }
+    .panel {
+      border: 1px solid var(--rule); border-radius: 22px; padding: 22px;
+      background: var(--paper-2);
+    }
+    .panel p { margin: 0; color: var(--muted); }
+    table { width: 100%; border-collapse: collapse; margin: 12px 0 48px; font-size: 0.98rem; }
+    th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+    th { color: var(--muted); font-weight: 500; font-size: 0.82rem; letter-spacing: 0.04em; text-transform: uppercase; }
+    code { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 0.88em; }
+    .gaps { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 20px 0 64px; }
+    .gap {
+      border: 1px solid var(--rule); border-radius: 18px; padding: 18px 18px 20px;
+      background: color-mix(in oklab, var(--paper) 80%, white);
+    }
+    .gap em { color: var(--steel); font-style: normal; font-weight: 600; font-size: 0.8rem; letter-spacing: 0.04em; }
+    .note {
+      border-left: 3px solid var(--danger); padding: 4px 0 4px 16px; color: var(--muted); margin: 0 0 48px; max-width: 62ch;
+    }
+    footer { border-top: 1px solid var(--rule); padding: 28px 0 48px; color: var(--muted); font-size: 0.92rem; display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+    @media (max-width: 800px) {
+      .places, .split, .gaps { grid-template-columns: 1fr 1fr; }
+      nav { display: none; }
+    }
+    @media (max-width: 520px) {
+      .places, .split, .gaps { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="brand"><img src="/public/mark.svg" alt="" /> Field OS</div>
+      <nav>
+        <a href="https://github.com/PdDesigns-paul/field-os">Repo</a>
+        <a href="https://github.com/PdDesigns-paul/field-os/blob/main/docs/GAPS.md">Gaps</a>
+        <a href="https://github.com/PdDesigns-paul/field-os/blob/main/docs/SPEC.md">Spec</a>
+      </nav>
+    </header>
+
+    <h1>The book for the porch.</h1>
+    <p class="lede">A white-label door-to-door coach and journal for a new hire in any trade. Offline first. Talk is the only cloud. Default pack is generic D2D — not a roofing reskin.</p>
+    <div class="row">
+      <a class="do" href="https://github.com/PdDesigns-paul/field-os">Open the repo</a>
+      <a class="go" href="https://github.com/PdDesigns-paul/field-os/blob/main/docs/GAPS.md">Read the gaps →</a>
+    </div>
+
+    <div class="places">
+      <div class="place"><strong>Today</strong><span>The log. Start here.</span></div>
+      <div class="place"><strong>Door</strong><span>Hook, honest reason, one question.</span></div>
+      <div class="place"><strong>Inspect</strong><span>Ticks on this house. Talk hidden.</span></div>
+      <div class="place"><strong>Plan</strong><span>Pins you dropped. Park once.</span></div>
+    </div>
+
+    <div class="split">
+      <div class="panel">
+        <h2>Kernel</h2>
+        <p>TypeScript. sql.js bytes in OPFS. Packs compile from markdown. Honesty and leak tests live here. CI runs without a browser. No account. No telemetry.</p>
+      </div>
+      <div class="panel">
+        <h2>Phone</h2>
+        <p>Svelte 5. Four Places, five types: Place, Do, Chip, Go, Talk. A renderer of kernel state — not a second source of truth.</p>
+      </div>
+    </div>
+
+    <p class="note">This is not Roofus. That repo stays a roofing phone. This product does not wear that dog unless pack <code>roof</code> brings its own mark. Do not copy that tree.</p>
+
+    <h2>Hosted on Vercel</h2>
+    <p class="lede">One project. Host header may select a pack. Talk is one function. The book never lives in Postgres.</p>
+    <table>
+      <thead><tr><th>Piece</th><th>Where it runs</th></tr></thead>
+      <tbody>
+        <tr><td>Places, cards, clock, book</td><td>The phone. Offline.</td></tr>
+        <tr><td>Talk</td><td>One Vercel function. Cheap Live, dear Roleplay.</td></tr>
+        <tr><td>Pack resolve</td><td><code>hosts.yaml</code>. Unknown host → <code>field</code>.</td></tr>
+        <tr><td>Copy this phone</td><td>SQLite dump or JSON. Merge in the kernel.</td></tr>
+      </tbody>
+    </table>
+
+    <h2>What the spec still needs</h2>
+    <p class="lede">Doctrine is solid. These are the holes that will hurt on a real phone or a Vercel bill.</p>
+    <div class="gaps">
+      <div class="gap"><em>01 Talk</em><h3>Not a public URL</h3><p>No account plus a public <code>/api/talk</code> is a credit firehose. Mint a shop grant from the desk. Still no login Place.</p></div>
+      <div class="gap"><em>02 Adapter</em><h3>Use adapter-vercel</h3><p><code>adapter-static</code> cannot be the Talk function. One SvelteKit app, prerendered Places, one server route.</p></div>
+      <div class="gap"><em>03 Book</em><h3>OPFS is not a disk</h3><p>Safari will eat it. OPFS primary, IndexedDB snapshot as fallback. Schema version from day one.</p></div>
+      <div class="gap"><em>04 Packs</em><h3>Do not bundle all four</h3><p>A pest phone must not ship i35 in the JS. Fetch the host’s pack. Leak tests on compiled surfaces and shipped bytes.</p></div>
+      <div class="gap"><em>05 Day</em><h3>Labor window, not midnight</h3><p>Start opens a day. End closes it. Do not auto-roll a 9pm last door onto tomorrow’s card.</p></div>
+      <div class="gap"><em>06 Voice</em><h3>Typed fallback on iPhone</h3><p>Hold-to-talk is not offline. Hear this line prefers a shop clip. Never record a homeowner.</p></div>
+    </div>
+
+    <p>The rest — photos stay in the camera roll, Plan is list-first, Office is a desk PIN, cooling-off is US federal only in V1 — lives in <a href="https://github.com/PdDesigns-paul/field-os/blob/main/docs/GAPS.md">docs/GAPS.md</a>.</p>
+
+    <footer>
+      <div>Field OS · PdDesigns-paul · MIT kernel, shop packs stay the shop’s.</div>
+      <div>Default pack <code>field</code>. Proofs <code>roof</code> · <code>pest</code> · <code>solar</code>.</div>
+    </footer>
+  </div>
+</body>
+</html>
