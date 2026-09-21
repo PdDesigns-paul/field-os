@@ -1,0 +1,11 @@
+{
+  "name": "Field",
+  "short_name": "Field",
+  "start_url": "/today",
+  "display": "standalone",
+  "background_color": "#efece3",
+  "theme_color": "#efece3",
+  "icons": [
+    { "src": "/mark.svg", "sizes": "64x64", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
