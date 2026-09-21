@@ -2,6 +2,8 @@
 
 The book. Agents implement this, not a memory of Roofus.
 
+Full stories and out-of-scope list: [contract.md](contract.md). This file is the working cut.
+
 ## Problem
 
 Roofus is a roofing takeoff tool that grew a canvasser journal, then a coach, then white-label packs, then a labor clock, then pest and solar proofs. The phone still thinks Today lives at `/truck`. A second shop still risks hearing “knock.”
