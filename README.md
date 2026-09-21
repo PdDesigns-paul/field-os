@@ -17,7 +17,7 @@ The phone is a ride-along: **Today / Door / Inspect / Plan**, an offline book, a
 
 ## Status
 
-Repo is public. Kernel, phone, and packs are **not implemented yet**. Sequence is below. Product contract: [docs/SPEC.md](docs/SPEC.md). Things the spec still needs: [docs/GAPS.md](docs/GAPS.md). Agent rules: [AGENTS.md](AGENTS.md).
+Repo is public. Kernel, phone, and packs are **not implemented yet**. Product contract: [issue #1](https://github.com/PdDesigns-paul/field-os/issues/1) · [docs/SPEC.md](docs/SPEC.md). Gaps: [issue #2](https://github.com/PdDesigns-paul/field-os/issues/2) · [docs/GAPS.md](docs/GAPS.md). Agent rules: [AGENTS.md](AGENTS.md). Sequence issues: [FO-0](https://github.com/PdDesigns-paul/field-os/issues/3) through [FO-7](https://github.com/PdDesigns-paul/field-os/issues/10).
 
 ## The one seam
 
