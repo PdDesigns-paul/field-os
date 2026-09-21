@@ -6,7 +6,7 @@ import { HONESTY, HONESTY_MARKERS } from "./honesty.ts";
 import { leakViolations } from "./leak.ts";
 import { getPack, PACKS } from "./packs.ts";
 import { resolvePack } from "./resolve.ts";
-import { buildTalkContext, modelFor } from "./talk.ts";
+import { buildTalkContext, modelFor, POSTED_BUDGET, stripGps, talkPayload } from "./talk.ts";
 
 test("resolve unknown and grok.me to field", () => {
   assert.equal(resolvePack({}), "field");
@@ -213,4 +213,63 @@ test("talk context strips gps and locks model", async () => {
   assert.equal(modelFor("roleplay", "xai"), "grok-4.5");
   assert.equal(modelFor("live", "xai"), "grok-4-fast");
   assert.equal(ctx.system.includes("16 CFR 429"), true);
+  assert.ok(ctx.posted.hits.includes("12 Oak"));
+});
+
+test("retrieve ranks matching memory and does not dump the book", async () => {
+  const book = await Book.open();
+  book.addMemory("Leave", "A no is a complete sentence.", "typed", "leave no");
+  book.addMemory("Chemicals", "We do not name a spray we did not bring.", "typed", "chemical");
+  book.addMemory("Neighbor", "Never invent a house next door.", "typed", "neighbor");
+  const hits = book.retrieve("how do I leave on a no");
+  assert.equal(hits[0]?.title, "Leave");
+  assert.equal(hits.some((h) => h.title === "Chemicals"), false);
+  const empty = book.retrieve("");
+  assert.equal(empty.length, 0);
+});
+
+test("talk retrieve posts matching memory, caps, and strips gps from memory", async () => {
+  const book = await Book.open();
+  book.saveOwner({ name: "Pat", company: "Acme", county: "Travis" });
+  book.setMindset("why", "Feed people.");
+  book.addMemory("Leave", "A no is a complete sentence.");
+  book.addMemory("Spray", "Do not invent a chemical.");
+  book.addMemory("Coords", "The shop is at 30.267 latitude.");
+  const long = "x".repeat(POSTED_BUDGET.memory + 80);
+  book.addMemory("Leave dump", long);
+  const ctx = buildTalkContext({
+    mode: "live",
+    pack: getPack("field"),
+    book,
+    query: "leave on a no",
+  });
+  assert.match(ctx.posted.memory, /Leave/);
+  assert.doesNotMatch(ctx.posted.memory, /chemical/i);
+  assert.ok(ctx.posted.hits.includes("Leave"));
+  assert.equal(ctx.posted.hits.includes("Spray"), false);
+  const fat = buildTalkContext({
+    mode: "live",
+    pack: getPack("field"),
+    book,
+    query: "leave dump",
+  });
+  assert.ok(fat.posted.memory.length <= POSTED_BUDGET.memory);
+  assert.match(fat.posted.memory, /…$/);
+  const gps = buildTalkContext({
+    mode: "live",
+    pack: getPack("field"),
+    book,
+    query: "coords shop latitude",
+  });
+  assert.doesNotMatch(JSON.stringify(gps.posted), /30\.267/);
+  assert.match(gps.posted.memory, /\[fix omitted\]/);
+  assert.ok(gps.posted.memory.length <= POSTED_BUDGET.memory);
+  const payload = talkPayload(ctx, "What do I say after a no?");
+  assert.equal(payload.model, "grok-4-fast");
+  assert.match(payload.messages[1].content, /Leave/);
+});
+
+test("stripGps redacts fixes and leaves porch words", () => {
+  assert.equal(stripGps("12 Oak at 30.267, -97.743"), "12 Oak at [fix omitted], [fix omitted]");
+  assert.equal(stripGps("Leave on a no."), "Leave on a no.");
 });

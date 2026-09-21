@@ -1,5 +1,5 @@
 import type { Database, SqlJsStatic, SqlValue } from "sql.js";
-import type { BrandPack, PinStatus } from "./types.ts";
+import type { BrandPack, MemoryRow, PinStatus } from "./types.ts";
 
 const SCHEMA = `
 PRAGMA user_version = 1;
@@ -393,22 +393,34 @@ export class Book {
     return out;
   }
 
-  addMemory(title: string, body: string, source = "typed"): void {
-    this.db.run("INSERT INTO memory (id, title, body, source) VALUES (?, ?, ?, ?)", [
+  addMemory(title: string, body: string, source = "typed", tags = ""): void {
+    this.db.run("INSERT INTO memory (id, title, tags, body, source) VALUES (?, ?, ?, ?, ?)", [
       uid(),
       title,
+      tags,
       body,
       source,
     ]);
   }
 
-  memories(): { id: string; title: string; body: string; source: string }[] {
-    return this.all("SELECT id, title, body, source FROM memory ORDER BY title").map((r) => ({
+  memories(): MemoryRow[] {
+    return this.all("SELECT id, title, tags, body, source FROM memory ORDER BY title").map((r) => ({
       id: String(r.id),
       title: String(r.title),
+      tags: String(r.tags ?? ""),
       body: String(r.body),
       source: String(r.source),
     }));
+  }
+
+  retrieve(query: string, limit = 4): MemoryRow[] {
+    const q = tokens(query);
+    if (!q.length) return [];
+    const scored = this.memories()
+      .map((m) => ({ m, score: scoreMemory(q, m) }))
+      .filter((x) => x.score > 0)
+      .sort((a, b) => b.score - a.score || a.m.title.localeCompare(b.m.title));
+    return scored.slice(0, Math.max(0, limit)).map((x) => x.m);
   }
 
   markCopy(channel: "file" | "json"): void {
@@ -896,5 +908,61 @@ export function pinMeters(
 function sortPins(pins: PinRow[], origin: { lat: number; lng: number } | null): PinRow[] {
   if (!origin) return pins;
   return [...pins].sort((a, b) => (pinMeters(origin, a) ?? 1e12) - (pinMeters(origin, b) ?? 1e12));
+}
+
+const STOP = new Set([
+  "the",
+  "and",
+  "for",
+  "what",
+  "how",
+  "did",
+  "does",
+  "this",
+  "that",
+  "with",
+  "from",
+  "have",
+  "want",
+  "when",
+  "then",
+  "just",
+  "your",
+  "you",
+  "are",
+  "was",
+  "can",
+  "not",
+  "but",
+  "our",
+  "out",
+  "about",
+  "into",
+  "them",
+  "they",
+  "will",
+  "would",
+  "should",
+  "could",
+]);
+
+function tokens(s: string): string[] {
+  return s
+    .toLowerCase()
+    .split(/[^a-z0-9]+/)
+    .filter((w) => w.length >= 3 && !STOP.has(w));
+}
+
+function scoreMemory(query: string[], m: MemoryRow): number {
+  const title = tokens(m.title);
+  const tags = tokens(m.tags);
+  const body = tokens(m.body);
+  let score = 0;
+  for (const t of query) {
+    if (title.includes(t)) score += 3;
+    if (tags.includes(t)) score += 2;
+    if (body.includes(t)) score += 1;
+  }
+  return score;
 }
 

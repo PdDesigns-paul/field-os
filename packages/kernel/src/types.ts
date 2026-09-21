@@ -25,6 +25,14 @@ export type ReferenceRow = {
   body: string;
 };
 
+export type MemoryRow = {
+  id: string;
+  title: string;
+  tags: string;
+  body: string;
+  source: string;
+};
+
 export type BrandPack = {
   id: string;
   productName: string;
@@ -75,5 +83,6 @@ export type TalkContext = {
     mindset: string;
     memory: string;
     who: string;
+    hits: string[];
   };
 };
