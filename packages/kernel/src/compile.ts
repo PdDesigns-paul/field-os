@@ -14,6 +14,7 @@ export type PackMeta = {
   who: string;
   starters: string[];
   help: { title: string; body: string }[];
+  reference?: BrandPack["reference"];
 };
 
 function sections(md: string): { title: string; body: string }[] {
@@ -110,6 +111,7 @@ export function compileMeta(meta: PackMeta, md: Omit<PackSource, "yaml">): Brand
     who: meta.who,
     starters: meta.starters,
     help: meta.help,
+    reference: meta.reference ?? [],
     scenes: cards.map((c) => c.title),
   };
   assertNoLeak(pack);
@@ -141,6 +143,7 @@ export function compileLeakyFixture(): never {
     who: "",
     starters: [],
     help: [],
+    reference: [],
     scenes: [],
   } satisfies BrandPack;
   assertNoLeak(pack);

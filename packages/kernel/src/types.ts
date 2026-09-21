@@ -19,6 +19,12 @@ export type InspectRow = {
   body: string;
 };
 
+export type ReferenceRow = {
+  title: string;
+  analog: string;
+  body: string;
+};
+
 export type BrandPack = {
   id: string;
   productName: string;
@@ -37,6 +43,7 @@ export type BrandPack = {
   who: string;
   starters: string[];
   help: { title: string; body: string }[];
+  reference: ReferenceRow[];
   scenes: string[];
 };
 

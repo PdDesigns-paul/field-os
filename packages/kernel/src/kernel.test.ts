@@ -27,6 +27,13 @@ test("field pest solar do not leak roof nouns", () => {
   }
 });
 
+test("packs ship distilled reference, not a fifth Place", () => {
+  assert.ok(PACKS.field.reference.some((r) => /16 CFR 429/.test(r.analog)));
+  assert.ok(PACKS.pest.reference.some((r) => /NPMA/.test(r.analog)));
+  assert.ok(PACKS.solar.reference.some((r) => /NABCEP/.test(r.analog)));
+  assert.ok(PACKS.roof.reference.some((r) => /InterNACHI/.test(r.analog)));
+});
+
 test("roof may say knock and i35", () => {
   assert.match(leakSurfacesSafe("roof"), /i35/i);
 });
@@ -99,6 +106,73 @@ test("copy json has labor memory pins and no trail", async () => {
   assert.equal(merged.counts[0].n, 5);
 });
 
+test("merge fills blanks and keeps higher counts", async () => {
+  const live = await Book.open();
+  live.saveOwner({ name: "Pat", company: "Acme", county: "" });
+  live.startDay();
+  live.bumpTile("doors", 2);
+  live.saveAar("Keep the loop.");
+  live.dropPin({ address: "1 Main" });
+  const incoming = await Book.open();
+  incoming.saveOwner({ name: "", company: "", county: "Travis" });
+  incoming.startDay();
+  incoming.bumpTile("doors", 5);
+  incoming.dropPin({ address: "9 Oak" });
+  incoming.addMemory("Leave", "A no is complete.");
+  live.mergeFromJson(incoming.toJson());
+  assert.equal(live.owner().name, "Pat");
+  assert.equal(live.owner().county, "Travis");
+  assert.equal(live.openDay()?.counts.doors, 5);
+  assert.equal(live.lastDay()?.aar, "Keep the loop.");
+  assert.equal(live.pins().length, 2);
+  assert.equal(live.memories()[0]?.body, "A no is complete.");
+});
+
+test("hours journal uses gaps not 0h", async () => {
+  const book = await Book.open();
+  const empty = book.hoursJournal(new Date());
+  assert.equal(empty.length, 7);
+  assert.ok(empty.every((h) => h.ms === null));
+  book.startDay();
+  book.bumpTile("doors", 1);
+  const today = book.hoursJournal(new Date());
+  assert.ok(today.some((h) => h.ms !== null && h.ms > 0));
+  assert.ok(today.filter((h) => h.ms === null).length >= 1);
+});
+
+test("reminder is setup until the book is mine, night only after work", async () => {
+  const book = await Book.open();
+  const evening = new Date();
+  evening.setHours(18, 0, 0, 0);
+  const morning = new Date();
+  morning.setHours(10, 0, 0, 0);
+  assert.equal(book.reminder(evening), "setup");
+  book.saveOwner({ name: "Pat", company: "Acme", county: "Travis" });
+  assert.equal(book.reminder(evening), null);
+  book.startDay();
+  book.bumpTile("doors", 1);
+  assert.equal(book.reminder(morning), null);
+  assert.equal(book.reminder(evening), "night");
+  book.saveAar("One set.");
+  assert.equal(book.reminder(evening), null);
+});
+
+test("working loop and pin groups", async () => {
+  const book = await Book.open();
+  const a = book.dropPin({ lat: 30.27, lng: -97.74, address: "Near" });
+  book.dropPin({ lat: 31.0, lng: -97.74, address: "Far" });
+  book.dropPin({ address: "No fix" });
+  book.useTodayLoop();
+  assert.equal(book.loopPinIds().length, 3);
+  book.setLoop([a.id]);
+  const groups = book.groupedPins({ lat: 30.27, lng: -97.74 });
+  assert.equal(groups[0]?.id, "loop");
+  assert.equal(groups[0]?.pins[0]?.address, "Near");
+  const bands = new Set(groups.map((g) => g.id));
+  assert.ok(bands.has("far") || bands.has("walk"));
+  assert.ok(bands.has("no-fix"));
+});
+
 test("restore json round-trips labor memory pins", async () => {
   const a = await Book.open();
   a.saveOwner({ name: "Pat", company: "Acme", county: "Travis", talkKey: "sk-or-secret" });
@@ -118,6 +192,15 @@ test("restore json round-trips labor memory pins", async () => {
   assert.equal(b.pins()[0]?.lat, 30.2);
   assert.equal(b.memories()[0]?.body, "We leave on a no.");
   assert.equal(b.mindset().why, "Feed people.");
+});
+
+test("copy round-trips working loop", async () => {
+  const a = await Book.open();
+  const pin = a.dropPin({ address: "1 Main" });
+  a.setLoop([pin.id]);
+  const b = await Book.open();
+  b.restoreFromJson(a.toJson());
+  assert.deepEqual(b.loopPinIds(), [pin.id]);
 });
 
 test("talk context strips gps and locks model", async () => {

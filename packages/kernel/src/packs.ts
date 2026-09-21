@@ -14,6 +14,23 @@ const field = compileMeta(
     who: "I am a new hire. I say who I am, the honest reason I stopped, and one open question.",
     starters: ["What do I say first?", "How do I leave on a no?"],
     help: [{ title: "Leave", body: "When they say no, thank them and leave. Do not pile on." }],
+    reference: [
+      {
+        title: "Who I am",
+        analog: "Taggart D2DU (public teaching)",
+        body: "Name, company, honest reason. Distilled here — not a licensed dump. The porch hears a person, not a pitch.",
+      },
+      {
+        title: "Leave on a no",
+        analog: "Bensman / Bryant porch craft (public)",
+        body: "A no is a complete sentence. Thank them and go. One set appointment can still be a winning day.",
+      },
+      {
+        title: "Cooling-off",
+        analog: "16 CFR 429",
+        body: "Three business days to cancel a home sale of $25 or more. The state may give more. Never coach a waiver.",
+      },
+    ],
   },
   {
     cards: `## Who I am
@@ -69,6 +86,13 @@ const pest = compileMeta(
     who: "I walk a route. I look at the foundation line. I do not invent an infestation.",
     starters: ["What do I say at a stop?", "When do I leave?"],
     help: [{ title: "Leave", body: "Four questions, then leave. Do not invent a chemical." }],
+    reference: [
+      {
+        title: "Foundation line",
+        analog: "NPMA / EPA Core (public)",
+        body: "Look at what you both can see along the slab. Do not invent activity next door. The label is the law — do not name a chemical you did not bring.",
+      },
+    ],
   },
   {
     cards: `## Stop
@@ -127,6 +151,13 @@ const solar = compileMeta(
       {
         title: "Qualifiers",
         body: "Own the home, pay the bill, have a usable plane, and want a look. Any no, leave. Do not invent a bill or a credit.",
+      },
+    ],
+    reference: [
+      {
+        title: "Four then leave",
+        analog: "NABCEP / SEI (public)",
+        body: "Own the home, pay the bill, open plane, want a look. Any no, leave. Never the utility. Never invent a production number or a credit year.",
       },
     ],
   },
@@ -196,6 +227,13 @@ const roof = compileMeta(
       {
         title: "Script B",
         body: "Age and a free look. Script A only after Keep on a matching zip.",
+      },
+    ],
+    reference: [
+      {
+        title: "What you both can see",
+        analog: "InterNACHI MRI (public analog)",
+        body: "Age and a free look first. Name what is already on the system. i35 is three options from what they said they saw — after photos, not before.",
       },
     ],
   },

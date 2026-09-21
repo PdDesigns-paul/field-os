@@ -69,6 +69,10 @@ CREATE TABLE IF NOT EXISTS copy_log (
   at TEXT NOT NULL,
   channel TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS loop_pin (
+  pin_id TEXT PRIMARY KEY,
+  n INTEGER NOT NULL
+);
 `;
 
 let SQL: SqlJsStatic | null = null;
@@ -120,6 +124,14 @@ export type PinRow = {
   createdAt: string;
 };
 
+export type Reminder = "setup" | "night" | null;
+
+export type PinGroup = {
+  id: string;
+  label: string;
+  pins: PinRow[];
+};
+
 export type DayRow = {
   id: string;
   startedAt: string;
@@ -141,12 +153,21 @@ export class Book {
     const db = bytes?.length ? new sql.Database(bytes) : new sql.Database();
     db.run(SCHEMA);
     const book = new Book(db);
+    book.migrate();
     book.ensureOwner();
     return book;
   }
 
   exportBytes(): Uint8Array {
     return this.db.export();
+  }
+
+  private migrate(): void {
+    this.db.run(`CREATE TABLE IF NOT EXISTS loop_pin (
+      pin_id TEXT PRIMARY KEY,
+      n INTEGER NOT NULL
+    )`);
+    this.db.run("PRAGMA user_version = 2");
   }
 
   private ensureOwner(): void {
@@ -399,19 +420,109 @@ export class Book {
     return r ? { at: String(r.at), channel: String(r.channel) } : null;
   }
 
-  hoursThisWeek(): { day: string; ms: number }[] {
-    const rows = this.all("SELECT id, started_at FROM day ORDER BY started_at DESC LIMIT 14");
-    return rows.map((d) => {
-      const windows = this.all("SELECT start, end FROM labor_window WHERE day_id=? AND kind='work'", [
-        d.id,
-      ]);
-      const ms = windows.reduce((sum, w) => {
-        const a = new Date(String(w.start)).getTime();
-        const b = w.end ? new Date(String(w.end)).getTime() : Date.now();
-        return sum + Math.max(0, b - a);
-      }, 0);
-      return { day: String(d.started_at).slice(0, 10), ms };
+  hoursJournal(now = new Date()): { date: string; ms: number | null }[] {
+    const days = this.all("SELECT id, started_at FROM day");
+    const byDate = new Map<string, string[]>();
+    for (const d of days) {
+      const local = localDate(new Date(String(d.started_at)));
+      const list = byDate.get(local) ?? [];
+      list.push(String(d.id));
+      byDate.set(local, list);
+    }
+    const out: { date: string; ms: number | null }[] = [];
+    for (let i = 6; i >= 0; i--) {
+      const cursor = new Date(now);
+      cursor.setHours(12, 0, 0, 0);
+      cursor.setDate(cursor.getDate() - i);
+      const date = localDate(cursor);
+      const ids = byDate.get(date);
+      if (!ids?.length) {
+        out.push({ date, ms: null });
+        continue;
+      }
+      let ms = 0;
+      for (const id of ids) {
+        const windows = this.all(
+          "SELECT start, end FROM labor_window WHERE day_id=? AND kind='work'",
+          [id],
+        );
+        ms += windows.reduce((sum, w) => {
+          const a = new Date(String(w.start)).getTime();
+          const b = w.end ? new Date(String(w.end)).getTime() : Date.now();
+          return sum + Math.max(0, b - a);
+        }, 0);
+      }
+      out.push({ date, ms: ms > 0 ? ms : null });
+    }
+    return out;
+  }
+
+  reminder(now = new Date()): Reminder {
+    if (!this.setupComplete()) return "setup";
+    if (now.getHours() < 17) return null;
+    const day = this.openDay() ?? this.lastDay();
+    if (!day) return null;
+    const pins = this.maybe("SELECT id FROM pin WHERE day_id=? LIMIT 1", [day.id]);
+    const hasWork = Object.values(day.counts).some((n) => n > 0) || Boolean(pins);
+    if (!hasWork) return null;
+    if (day.aar.trim()) return null;
+    return "night";
+  }
+
+  setLoop(pinIds: string[]): void {
+    this.db.run("DELETE FROM loop_pin");
+    pinIds.forEach((id, n) => {
+      this.db.run("INSERT INTO loop_pin (pin_id, n) VALUES (?, ?)", [id, n]);
     });
+  }
+
+  loopPinIds(): string[] {
+    return this.all("SELECT pin_id FROM loop_pin ORDER BY n").map((r) => String(r.pin_id));
+  }
+
+  useTodayLoop(): void {
+    const day = this.openDay() ?? this.lastDay();
+    if (!day) {
+      this.setLoop([]);
+      return;
+    }
+    this.setLoop(
+      this.all("SELECT id FROM pin WHERE day_id=? ORDER BY created_at", [day.id]).map((r) =>
+        String(r.id),
+      ),
+    );
+  }
+
+  groupedPins(origin: { lat: number; lng: number } | null): PinGroup[] {
+    const pins = this.pins();
+    const loopIds = new Set(this.loopPinIds());
+    const loop = pins.filter((p) => loopIds.has(p.id));
+    const rest = pins.filter((p) => !loopIds.has(p.id));
+    const groups: PinGroup[] = [];
+    if (loop.length) groups.push({ id: "loop", label: "Working loop", pins: sortPins(loop, origin) });
+    if (!origin) {
+      if (rest.length) groups.push({ id: "all", label: loop.length ? "Other pins" : "Pins", pins: rest });
+      return groups;
+    }
+    const near: PinRow[] = [];
+    const walk: PinRow[] = [];
+    const far: PinRow[] = [];
+    const noFix: PinRow[] = [];
+    for (const p of rest) {
+      const m = pinMeters(origin, p);
+      if (m == null) noFix.push(p);
+      else if (m < 400) near.push(p);
+      else if (m < 1000) walk.push(p);
+      else far.push(p);
+    }
+    const band = (id: string, label: string, list: PinRow[]) => {
+      if (list.length) groups.push({ id, label, pins: sortPins(list, origin) });
+    };
+    band("near", "Near", near);
+    band("walk", "Walk", walk);
+    band("far", "Farther", far);
+    band("no-fix", "No fix", noFix);
+    return groups;
   }
 
   liveDayHasWork(): boolean {
@@ -434,6 +545,7 @@ export class Book {
       memory: this.all("SELECT * FROM memory"),
       mindset: this.all("SELECT * FROM mindset"),
       copy: this.all("SELECT * FROM copy_log"),
+      loop: this.all("SELECT * FROM loop_pin"),
     };
   }
 
@@ -449,6 +561,7 @@ export class Book {
       memory?: Record<string, unknown>[];
       mindset?: Record<string, unknown>[];
       copy?: Record<string, unknown>[];
+      loop?: Record<string, unknown>[];
     };
     const keptKey = this.owner().talkKey;
     this.db.run("DELETE FROM inspect_tick");
@@ -459,6 +572,7 @@ export class Book {
     this.db.run("DELETE FROM memory");
     this.db.run("DELETE FROM mindset");
     this.db.run("DELETE FROM copy_log");
+    this.db.run("DELETE FROM loop_pin");
 
     if (json.owner) {
       const o = json.owner;
@@ -536,6 +650,18 @@ export class Book {
         sqlVal(c.channel ?? "json"),
       ]);
     }
+    for (const l of json.loop ?? []) {
+      this.db.run("INSERT OR REPLACE INTO loop_pin (pin_id, n) VALUES (?, ?)", [
+        sqlVal(l.pin_id),
+        Number(l.n) || 0,
+      ]);
+    }
+  }
+
+  mergeFromJson(data: unknown): void {
+    if (!data || typeof data !== "object") throw new Error("not a Field OS copy");
+    const merged = mergeJson(this.toJson() as Record<string, unknown>, data as Record<string, unknown>);
+    this.restoreFromJson(merged);
   }
 
   private hydrateDay(r: Record<string, unknown>): DayRow {
@@ -595,20 +721,180 @@ export function mergeJson(
   a: Record<string, unknown>,
   b: Record<string, unknown>,
 ): Record<string, unknown> {
+  const { days, remap } = collapseByDate(
+    unionByKey(asRows(a.days), asRows(b.days), "id", mergeDay),
+  );
+  const dayOf = (id: unknown) => remap.get(String(id)) ?? String(id ?? "");
+  const withDay = (row: Record<string, unknown>) => ({
+    ...row,
+    day_id: row.day_id == null ? row.day_id : dayOf(row.day_id),
+  });
   const counts = new Map<string, number>();
   for (const src of [a.counts, b.counts]) {
     if (!Array.isArray(src)) continue;
     for (const row of src as { day_id: string; unit_id: string; n: number }[]) {
-      const k = `${row.day_id}:${row.unit_id}`;
+      const k = `${dayOf(row.day_id)}:${row.unit_id}`;
       counts.set(k, Math.max(counts.get(k) ?? 0, Number(row.n) || 0));
     }
   }
   return {
-    ...a,
-    ...b,
+    owner: mergeOwner(asRecord(a.owner), asRecord(b.owner)),
+    days,
     counts: [...counts.entries()].map(([k, n]) => {
       const [day_id, unit_id] = k.split(":");
       return { day_id, unit_id, n };
     }),
+    windows: unionByKey(
+      asRows(a.windows).map(withDay),
+      asRows(b.windows).map(withDay),
+      "id",
+      (live, inc) => ({ ...inc, ...live }),
+    ),
+    pins: unionByKey(asRows(a.pins).map(withDay), asRows(b.pins).map(withDay), "id", mergePin),
+    ticks: unionTicks(asRows(a.ticks), asRows(b.ticks)),
+    memory: unionByKey(asRows(a.memory), asRows(b.memory), "id", (live, inc) => ({
+      ...inc,
+      ...live,
+      body: String(live.body ?? "") || String(inc.body ?? ""),
+    })),
+    mindset: unionByKey(asRows(a.mindset), asRows(b.mindset), "k", (live, inc) => ({
+      k: live.k ?? inc.k,
+      v: String(live.v ?? "") || String(inc.v ?? ""),
+    })),
+    copy: [...asRows(a.copy), ...asRows(b.copy)],
+    loop: asRows(a.loop).length ? asRows(a.loop) : asRows(b.loop),
   };
 }
+
+function asRecord(v: unknown): Record<string, unknown> {
+  return v && typeof v === "object" ? (v as Record<string, unknown>) : {};
+}
+
+function asRows(v: unknown): Record<string, unknown>[] {
+  return Array.isArray(v) ? (v as Record<string, unknown>[]) : [];
+}
+
+function unionByKey(
+  live: Record<string, unknown>[],
+  incoming: Record<string, unknown>[],
+  key: string,
+  merge: (live: Record<string, unknown>, incoming: Record<string, unknown>) => Record<string, unknown>,
+): Record<string, unknown>[] {
+  const map = new Map<string, Record<string, unknown>>();
+  for (const row of incoming) {
+    const k = String(row[key] ?? "");
+    if (k) map.set(k, row);
+  }
+  for (const row of live) {
+    const k = String(row[key] ?? "");
+    if (!k) continue;
+    const prev = map.get(k);
+    map.set(k, prev ? merge(row, prev) : row);
+  }
+  return [...map.values()];
+}
+
+function mergeOwner(live: Record<string, unknown>, incoming: Record<string, unknown>): Record<string, unknown> {
+  const fill = (k: string) => {
+    const a = String(live[k] ?? "");
+    return a || incoming[k];
+  };
+  return {
+    ...incoming,
+    ...live,
+    name: fill("name"),
+    company: fill("company"),
+    county: fill("county"),
+    label: fill("label") || "This phone",
+    packId: live.packId || live.pack_id || incoming.packId || incoming.pack_id || "field",
+    talkKey: live.talkKey || live.talk_key || incoming.talkKey || incoming.talk_key || "",
+  };
+}
+
+function mergeDay(live: Record<string, unknown>, incoming: Record<string, unknown>): Record<string, unknown> {
+  return {
+    ...incoming,
+    ...live,
+    notes: String(live.notes ?? "") || incoming.notes,
+    aar: String(live.aar ?? "") || incoming.aar,
+    ended_at: live.ended_at ?? incoming.ended_at,
+  };
+}
+
+function collapseByDate(days: Record<string, unknown>[]): {
+  days: Record<string, unknown>[];
+  remap: Map<string, string>;
+} {
+  const groups = new Map<string, Record<string, unknown>[]>();
+  for (const d of days) {
+    const key = d.started_at ? localDate(new Date(String(d.started_at))) : String(d.id ?? "");
+    const list = groups.get(key) ?? [];
+    list.push(d);
+    groups.set(key, list);
+  }
+  const remap = new Map<string, string>();
+  const out: Record<string, unknown>[] = [];
+  for (const list of groups.values()) {
+    const keptId = String(list[0]?.id ?? "");
+    let merged = list[0] ?? {};
+    for (const row of list) {
+      merged = mergeDay(merged, row);
+      remap.set(String(row.id), keptId);
+    }
+    out.push({ ...merged, id: keptId });
+  }
+  return { days: out, remap };
+}
+
+function mergePin(live: Record<string, unknown>, incoming: Record<string, unknown>): Record<string, unknown> {
+  return {
+    ...incoming,
+    ...live,
+    address: String(live.address ?? "") || incoming.address,
+    note: String(live.note ?? "") || incoming.note,
+    lat: live.lat ?? incoming.lat,
+    lng: live.lng ?? incoming.lng,
+    status: live.status ?? incoming.status,
+  };
+}
+
+function unionTicks(
+  live: Record<string, unknown>[],
+  incoming: Record<string, unknown>[],
+): Record<string, unknown>[] {
+  const map = new Map<string, Record<string, unknown>>();
+  for (const row of [...incoming, ...live]) {
+    const k = `${row.pin_id}:${row.row_id}`;
+    const prev = map.get(k);
+    const done = Number(row.done) || 0;
+    map.set(k, { ...row, done: Math.max(done, Number(prev?.done) || 0) });
+  }
+  return [...map.values()];
+}
+
+function localDate(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+export function pinMeters(
+  origin: { lat: number; lng: number },
+  pin: { lat: number | null; lng: number | null },
+): number | null {
+  if (pin.lat == null || pin.lng == null) return null;
+  const toRad = (n: number) => (n * Math.PI) / 180;
+  const dLat = toRad(pin.lat - origin.lat);
+  const dLng = toRad(pin.lng - origin.lng);
+  const s =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(origin.lat)) * Math.cos(toRad(pin.lat)) * Math.sin(dLng / 2) ** 2;
+  return 2 * 6371000 * Math.asin(Math.min(1, Math.sqrt(s)));
+}
+
+function sortPins(pins: PinRow[], origin: { lat: number; lng: number } | null): PinRow[] {
+  if (!origin) return pins;
+  return [...pins].sort((a, b) => (pinMeters(origin, a) ?? 1e12) - (pinMeters(origin, b) ?? 1e12));
+}
+

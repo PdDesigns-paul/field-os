@@ -21,6 +21,7 @@ export function leakSurfaces(pack: BrandPack): string {
     ...Object.values(pack.briefs),
     ...pack.starters,
     ...pack.help.flatMap((h) => [h.title, h.body]),
+    ...pack.reference.flatMap((r) => [r.title, r.analog, r.body]),
     ...pack.scenes,
   ];
   return bits.join("\n");
