@@ -20,3 +20,19 @@ jobs:
         run: |
           npm install
           npm test
+
+  phone:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/phone
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - name: Phone types and build
+        run: |
+          npm install
+          npm test
+          npm run build
