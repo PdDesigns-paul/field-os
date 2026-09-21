@@ -19,7 +19,7 @@ The phone is a ride-along: **Today / Door / Inspect / Plan**, an offline book, a
 
 **Sequence 1 (kernel) is in this repo.** `packages/kernel` compiles four pack templates, owns the sql.js book, honesty, leak tests, Talk context, and Copy JSON restore. CI is `npm test` in that folder. No Playwright. No `cargo`.
 
-A playable phone is proving the seam in a Grok preview (TanStack shell, same TypeScript kernel). Svelte Places land in sequence 2. Until then, this host still serves the Field OS face from `index.html`.
+**Sequence 2 (Svelte shell) is `apps/phone`.** Four Places, five types, tour, OPFS book via the kernel. `/` → `/today`. Talk is a button, hidden on Inspect. Default pack `field`. The marketing face at `index.html` stays until FO-7 points the host at the PWA.
 
 Product contract: [docs/SPEC.md](docs/SPEC.md). Gaps: [docs/GAPS.md](docs/GAPS.md). Agent rules: [AGENTS.md](AGENTS.md).
 
@@ -74,12 +74,12 @@ Preview / shop play-testing may fall back to `XAI_API_KEY` when no OpenRouter ke
 
 One project. Static PWA for the Places (once Svelte exists). One Node function for Talk. No host Postgres as the book. No `cargo` / `wasm-pack` step.
 
-Until the Svelte phone exists, this repo serves the Field OS face from `index.html` so the project has a host that is **not** roofus.coach. A generic `field-os.vercel.app` (or whatever Vercel assigns) is the play-test domain.
+Until FO-7 points production at `apps/phone`, this repo still serves the Field OS face from `index.html` so the project has a host that is **not** roofus.coach. Run the phone with `cd apps/phone && npm install && npm run dev`.
 
 ## Sequence
 
 1. TypeScript kernel: pack compile, empty Book, honesty strings, leak fixtures, CLI. **Done.**
-2. Svelte shell: four Places, five types, empty book, tour, routes that match words.
+2. Svelte shell: four Places, five types, empty book, tour, routes that match words. **On branch fo-1.**
 3. Journal + labor + pins + Copy this phone.
 4. Talk fleet + memory retrieve.
 5. Door / Inspect / Roleplay from compiled markdown.
@@ -88,7 +88,7 @@ Until the Svelte phone exists, this repo serves the Field OS face from `index.ht
 
 Photos and VoiceStudio (hotswap roleplay voices) stay at the bottom of the list.
 
-CI is the kernel. No Playwright. No browser in GitHub Actions.
+CI is the kernel plus a Svelte production build. No Playwright. No browser in GitHub Actions.
 
 ## Not this product
 
